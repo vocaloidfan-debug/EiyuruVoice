@@ -1,0 +1,28 @@
+// Dil Çeviri Veritabanı
+const translations = {
+    tr: {
+        title: "EiyuruSes",
+        subtitle: "Kendi tarayıcı tabanlı sanal şarkıcını oluştur!",
+        labelSyllable: "Söylenecek Hece:",
+        helpText: "Bir notaya basarak vokalisti öttürün."
+    },
+    en: {
+        title: "EiyuruVoice",
+        subtitle: "Create your own browser-based virtual singer!",
+        labelSyllable: "Syllable to Sing:",
+        helpText: "Press a key to make the vocalist sing."
+    },
+    ja: {
+        title: "えいゆるボイス",
+        subtitle: "ブラウザベースの仮想シンガを作ろう！",
+        labelSyllable: "歌う音節:",
+        helpText: "キーを押してボーカリストに歌わせます。"
+    }
+};
+
+function changeLanguage(lang) {
+    document.getElementById("title").innerText = translations[lang].title;
+    document.getElementById("subtitle").innerText = translations[lang].subtitle;
+    document.getElementById("label-syllable").innerText = translations[lang].labelSyllable;
+    document.getElementById("help-text").innerText = translations[lang].helpText;
+}
