@@ -1,145 +1,16 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="utf-8" />
-    <title>EiyuruVoice Studio</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="https://cloudflare.com"></script>
-    <style>
-        :root { --pink: #FF2E93; --panel: #121214; }
-        body { background: #0B0C10; color: #fff; font-family: sans-serif; margin: 0; overflow: hidden; }
-        .top-bar { background: var(--panel); border-bottom: 1px solid #1F2833; height: 50px; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; }
-        .menu-btn { font-size: 24px; color: white; background: none; border: none; cursor: pointer; }
-        .play-btn { background: var(--pink); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; }
-        .side-menu { position: fixed; top: 0; left: -260px; width: 250px; height: 100%; background: var(--panel); border-right: 2px solid var(--pink); transition: 0.3s; z-index: 100; padding: 20px; box-sizing: border-box; }
-        .side-menu.open { left: 0; }
-        .option { margin-bottom: 15px; display: flex; flex-direction: column; gap: 5px; font-size: 12px; }
-        input[type="file"] { background: #1F2833; border: 1px solid #1F2833; color: white; padding: 5px; border-radius: 4px; }
-        .editor { display: flex; height: calc(100vh - 50px); }
-        .piano { width: 50px; background: #1F2833; display: flex; flex-direction: column; }
-        .key { height: 30px; border-bottom: 1px solid #000; font-size: 10px; display: flex; align-items: center; justify-content: flex-end; padding-right: 3px; background: #2E3944; }
-        .black { background: #0B0C10; border-left: 3px solid var(--pink); color: #888; }
-        .grid { flex-grow: 1; overflow: auto; background: #050507; }
-        canvas { display: block; cursor: crosshair; }
-    </style>
-</head>
-<body>
-
-    <div class="top-bar">
-        <button class="menu-btn" onclick="toggleMenu()">☰</button>
-        <b style="color: var(--pink);">EIYURUVOICE PRO</b>
-        <button class="play-btn" onclick="play()">▶</button>
-    </div>
-
-    <div class="side-menu" id="menu">
-        <h3 style="color: var(--pink); margin-top:0;">🎛️ Seçenekler</h3>
-        <div class="option"><label>🎙️ Voicebank (.zip):</label><input type="file" accept=".zip" onchange="loadZip(event)" /></div>
-        <div class="option"><label>🎵 UTAU Projesi (.ust):</label><input type="file" accept=".ust" onchange="loadUST(event)" /></div>
-        <div class="option"><label>🎼 Altyapı Müziği (Audio):</label><input type="file" accept="audio/*" onchange="loadBG(event)" /></div>
-        <button class="menu-btn" style="font-size:16px; color:var(--pink);" onclick="toggleMenu()">✕ Kapat</button>
-    </div>
-
-    <div class="editor">
-        <div class="piano" id="piano"></div>
-        <div class="grid"><canvas id="canvas" width="800" height="360"></canvas></div>
-    </div>
-
-<script>
-    const notes = ["C5", "B4", "A4", "G4", "F4", "E4", "D4", "C4", "B3", "A3", "G3", "F3"];
-    const freqs = [523.25, 493.88, 440.00, 392.00, 349.23, 329.63, 293.66, 261.63, 246.94, 220.00, 196.00, 174.61];
-    const canvas = document.getElementById('canvas'), ctx = canvas.getContext('2d');
-    let matrix = Array(12).fill().map(() => Array(16).fill(null)), samples = {}, bgBuffer = null, audioCtx = null;
-
-    notes.forEach(n => {
-        const k = document.createElement('div');
-        k.className = `key ${n.includes('#') ? 'black' : ''}`; k.innerText = n;
-        document.getElementById('piano').appendChild(k);
-    });
-
-    function toggleMenu() { document.getElementById('menu').classList.toggle('open'); }
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        for (let r = 0; r < 12; r++) {
-            for (let c = 0; c < 16; c++) {
-                if (matrix[r][c]) {
-                    ctx.fillStyle = '#FF2E93'; ctx.beginPath(); ctx.roundRect(c * 50 + 2, r * 30 + 2, 46, 26, 6); ctx.fill();
-                    ctx.fillStyle = '#FFF'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center';
-                    ctx.fillText(matrix[r][c].lyric, c * 50 + 25, r * 30 + 17);
-                }
-            }
-        }
-        ctx.strokeStyle = '#1F2833'; ctx.lineWidth = 0.5;
-        for (let i = 0; i <= 12; i++) { ctx.beginPath(); ctx.moveTo(0, i * 30); ctx.lineTo(canvas.width, i * 30); ctx.stroke(); }
-        for (let j = 0; j <= 16; j++) { ctx.beginPath(); ctx.moveTo(j * 50, 0); ctx.lineTo(j * 50, canvas.height); ctx.stroke(); }
-    }
-
-    canvas.addEventListener('click', (e) => {
-        const rect = canvas.getBoundingClientRect();
-        const c = Math.floor((e.clientX - rect.left) / 50), r = Math.floor((e.clientY - rect.top) / 30);
-        if (r >= 0 && r < 12 && c >= 0 && c < 16) {
-            matrix[r][c] = matrix[r][c] ? null : { lyric: prompt("Söz:", "a") || "a", freq: freqs[r] };
-            draw();
-        }
-    });
-
-    async function loadZip(e) {
-        if (!e.target.files[0]) return;
-        const zip = await JSZip.loadAsync(e.target.files[0]); samples = {};
-        for (let f in zip.files) {
-            if (f.endsWith('.wav')) {
-                samples[f.split('/').pop().replace('.wav', '').toLowerCase()] = await zip.files[f].async("arraybuffer");
-            }
-        }
-        toggleMenu();
-    }
-
-    function loadUST(e) {
-        if (!e.target.files[0]) return;
-        const reader = new FileReader();
-        reader.onload = (evt) => {
-            matrix = Array(12).fill().map(() => Array(16).fill(null)); let col = 0;
-            evt.target.result.split(/\[#\d+\]/).forEach(sec => {
-                if (!sec.includes("NoteNum") || col >= 16) return;
-                const num = parseInt(sec.match(/NoteNum=(\d+)/)?.[1] || 60), lyr = sec.match(/Lyric=([^\r\n]+)/)?.[1] || "a";
-                const f = 440 * Math.pow(2, (num - 69) / 12);
-                let row = freqs.reduce((b, cur, idx) => Math.abs(cur - f) < Math.abs(freqs[b] - f) ? idx : b, 0);
-                matrix[row][col] = { lyric: lyr, freq: f }; col++;
-            });
-            draw(); toggleMenu();
-        };
-        reader.readAsText(e.target.files[0], "ISO-8859-1");
-    }
-
-    function loadBG(e) {
-        if (!e.target.files[0]) return;
-        const reader = new FileReader();
-        reader.onload = async (evt) => {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            bgBuffer = await audioCtx.decodeAudioData(evt.target.result); toggleMenu();
-        };
-        reader.readAsArrayBuffer(e.target.files[0]);
-    }
-
-    async function play() {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (bgBuffer) { const s = audioCtx.createBufferSource(); s.buffer = bgBuffer; s.connect(audioCtx.destination); s.start(0); }
-        for (let r = 0; r < 12; r++) {
-            for (let c = 0; c < 16; c++) {
-                if (!matrix[r][c]) continue;
-                const start = audioCtx.currentTime + (c * 0.35), cell = matrix[r][c], lyr = cell.lyric.toLowerCase();
-                if (samples[lyr]) {
-                    const s = audioCtx.createBufferSource(); s.buffer = await audioCtx.decodeAudioData(samples[lyr].slice(0));
-                    s.playbackRate.value = cell.freq / 440.0; s.connect(audioCtx.destination); s.start(start);
-                } else {
-                    const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type = 'triangle'; o.frequency.value = cell.freq;
-                    g.gain.setValueAtTime(0.1, start); g.gain.linearRampToValueAtTime(0, start + 0.35);
-                    o.connect(g).connect(audioCtx.destination); o.start(start); o.stop(start + 0.35);
-                }
-            }
-        }
-    }
-    draw();
-</script>
-</body>
+<!doctype html>
+<html lang="en" data-theme="dark">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
+		<link rel="manifest" href="%sveltekit.assets%/manifest.webmanifest" />
+		<link rel="apple-touch-icon" href="%sveltekit.assets%/favicon.png" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+		%sveltekit.head%
+	</head>
+	<body data-sveltekit-preload-data="off">
+		<div style="display: contents">%sveltekit.body%</div>
+	</body>
 </html>
