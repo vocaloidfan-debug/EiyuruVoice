@@ -1,29 +1,79 @@
-// Dil Çeviri Veritabanı
-const translations = {
-    tr: {
-            title: "EiyuruSes",
-                    subtitle: "Kendi tarayıcı tabanlı sanal şarkıcını oluştur!",
-                            labelSyllable: "Söylenecek Hece:",
-                                    helpText: "Bir notaya basarak vokalisti öttürün."
-                                        },
-                                            en: {
-                                                    title: "EiyuruSes",
-                                                            subtitle: "Create your own browser-based virtual singer!",
-                                                                    labelSyllable: "Syllable to Sing:",
-                                                                            helpText: "Press a key to make the vocalist sing."
-                                                                                },
-                                                                                    ja: {
-                                                                                            title: "えいゆるボイス",
-                                                                                                    subtitle: "ブラウザベースの仮想シンガを作ろう！",
-                                                                                                            labelSyllable: "歌う音節:",
-                                                                                                                    helpText: "キーを押してボーカリストに歌わせます。"
-                                                                                                                        }
-                                                                                                                        };
+                                                                    <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>EiyuruVoice</title>
+    <style>
+        body { background: #0B0C10; color: #fff; font-family: sans-serif; padding: 20px; text-align: center; }
+        h1 { color: #FF2E93; text-shadow: 0 0 10px #FF2E93; }
+        .btn { background: #FF2E93; color: #fff; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 5px; margin: 5px; }
+        .lang-btn { background: #1F2833; border: 1px solid #FF2E93; color: white; padding: 5px; cursor: pointer; }
+        #grid { display: grid; grid-template-columns: repeat(8, 40px); gap: 2px; justify-content: center; margin: 20px auto; width: fit-content; }
+        .cell { width: 40px; height: 40px; background: #1F2833; border: 1px solid #0B0C10; cursor: pointer; }
+        .cell.active { background: #FF2E93; box-shadow: 0 0 8px #FF2E93; }
+    </style>
+</head>
+<body>
 
-                                                                                                                        function changeLanguage(lang) {
-                                                                                                                            document.getElementById("title").innerText = translations[lang].title;
-                                                                                                                                document.getElementById("subtitle").innerText = translations[lang].subtitle;
-                                                                                                                                    document.getElementById("label-syllable").innerText = translations[lang].labelSyllable;
-                                                                                                                                        document.getElementById("help-text").innerText = translations[lang].helpText;
-                                                                                                                                        }
-                                                                                                                                        
+    <div>
+        <button class="lang-btn" onclick="setLang('tr')">TR</button>
+        <button class="lang-btn" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" onclick="setLang('ja')">JA</button>
+    </div>
+
+    <h1>EIYURU VOICE</h1>
+    <p id="sub">Kendi sanal şarkıcını oluştur!</p>
+
+    <div id="grid"></div>
+
+    <button class="btn" id="btn-synth" onclick="playMusic()">Sesi Sentezle</button>
+
+<script>
+    const freqs = [523.25, 493.88, 440.00, 392.00, 349.23, 329.63, 293.66, 261.63]; // C5'ten C4'e notalar
+    const grid = document.getElementById('grid');
+    
+    const txt = {
+        tr: { sub: "Kendi sanal şarkıcını oluştur!", synth: "Sesi Sentezle" },
+        en: { sub: "Create your virtual singer!", synth: "Synthesize Audio" },
+        ja: { sub: "仮想シンガーを作ろう！", synth: "音声合成" }
+    };
+
+    // 8x8 Kare Izgara Oluştur
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.dataset.freq = freqs[r];
+            cell.dataset.step = c;
+            cell.onclick = () => cell.classList.toggle('active');
+            grid.appendChild(cell);
+        }
+    }
+
+    function setLang(lang) {
+        document.getElementById('sub').innerText = txt[lang].sub;
+        document.getElementById('btn-synth').innerText = txt[lang].synth;
+    }
+
+    function playMusic() {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        document.querySelectorAll('.cell.active').forEach(cell => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const time = ctx.currentTime + (cell.dataset.step * 0.3);
+            
+            osc.frequency.value = parseFloat(cell.dataset.freq);
+            osc.type = 'triangle';
+            
+            gain.gain.setValueAtTime(0, time);
+            gain.gain.linearRampToValueAtTime(0.2, time + 0.02);
+            gain.gain.linearRampToValueAtTime(0, time + 0.28);
+            
+            osc.connect(gain).connect(ctx.destination);
+            osc.start(time);
+            osc.stop(time + 0.3);
+        });
+    }
+</script>
+</body>
+</html>
