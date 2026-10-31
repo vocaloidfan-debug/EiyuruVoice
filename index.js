@@ -1,28 +1,39 @@
-// Dil Çeviri Veritabanı
-const translations = {
-    tr: {
-        title: "EiyuruSes",
-        subtitle: "Kendi tarayıcı tabanlı sanal şarkıcını oluştur!",
-        labelSyllable: "Söylenecek Hece:",
-        helpText: "Bir notaya basarak vokalisti öttürün."
-    },
-    en: {
-        title: "EiyuruVoice",
-        subtitle: "Create your own browser-based virtual singer!",
-        labelSyllable: "Syllable to Sing:",
-        helpText: "Press a key to make the vocalist sing."
-    },
-    ja: {
-        title: "えいゆるボイス",
-        subtitle: "ブラウザベースの仮想シンガを作ろう！",
-        labelSyllable: "歌う音節:",
-        helpText: "キーを押してボーカリストに歌わせます。"
-    }
-};
+import prettier from 'eslint-config-prettier';
+import { includeIgnoreFile } from '@eslint/compat';
+import js from '@eslint/js';
+import svelte from 'eslint-plugin-svelte';
+import globals from 'globals';
+import { fileURLToPath } from 'node:url';
+import ts from 'typescript-eslint';
 
-function changeLanguage(lang) {
-    document.getElementById("title").innerText = translations[lang].title;
-    document.getElementById("subtitle").innerText = translations[lang].subtitle;
-    document.getElementById("label-syllable").innerText = translations[lang].labelSyllable;
-    document.getElementById("help-text").innerText = translations[lang].helpText;
-}
+const gitignorePath = fileURLToPath(new URL('./.gitignore', import.meta.url));
+
+export default ts.config(
+	includeIgnoreFile(gitignorePath),
+	{ ignores: ['src/lib/engine/wasm/*.js', 'build/**', '.svelte-kit/**', 'crates/**', 'target/**'] },
+	js.configs.recommended,
+	...ts.configs.recommended,
+	...svelte.configs.recommended,
+	prettier,
+	...svelte.configs.prettier,
+	{
+		languageOptions: {
+			globals: { ...globals.browser, ...globals.node }
+		},
+		rules: {
+			'no-undef': 'off',
+			// Selections are immutable snapshots that get replaced, never mutated in place.
+			'svelte/prefer-svelte-reactivity': 'off'
+		}
+	},
+	{
+		files: ['**/*.svelte', '**/*.svelte.ts', '**/*.svelte.js'],
+		languageOptions: {
+			parserOptions: {
+				projectService: true,
+				extraFileExtensions: ['.svelte'],
+				parser: ts.parser
+			}
+		}
+	}
+);
