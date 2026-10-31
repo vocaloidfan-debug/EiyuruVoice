@@ -1,107 +1,122 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
-	<head>
-		<meta charset="utf-8" />
-		<title>EiyuruVoice Studio</title>
-		
-		<!-- Mobil cihazlarda tam ekran uygulama (PWA) gibi görünmesi için ayarlar -->
-		<meta name="apple-mobile-web-app-capable" content="yes" />
-		<meta name="mobile-web-app-capable" content="yes" />
-		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>EiyuruVoice Pro</title>
+    <style>
+        body { background: #0B0C10; color: #fff; font-family: sans-serif; padding: 20px; text-align: center; }
+        h1 { color: #FF2E93; text-shadow: 0 0 10px #FF2E93; }
+        .panel { background: #121214; border: 1px solid #FF2E93; padding: 15px; border-radius: 8px; max-width: 500px; margin: 0 auto 20px; }
+        input { background: #1F2833; border: 1px solid #FF2E93; color: #fff; padding: 5px; border-radius: 4px; font-size: 12px; margin: 5px; }
+        #grid { display: grid; grid-template-columns: repeat(8, 45px); gap: 3px; justify-content: center; margin: 20px auto; }
+        .cell { width: 45px; height: 40px; background: #1F2833; border-radius: 4px; cursor: pointer; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 9px; }
+        .cell.active { background: #FF2E93; box-shadow: 0 0 10px #FF2E93; }
+        .btn { background: #FF2E93; color: #fff; border: none; padding: 12px 30px; font-weight: bold; cursor: pointer; border-radius: 8px; }
+        #log { color: #00FF66; font-family: monospace; margin-top: 15px; font-size: 12px; }
+    </style>
+</head>
+<body>
 
-		<style>
-			/* Siberpunk Temalı Tasarım Kodları */
-			body { 
-				background: #0B0C10; 
-				color: #ffffff; 
-				font-family: system-ui, -apple-system, sans-serif; 
-				padding: 20px; 
-				text-align: center;
-				margin: 0;
-			}
-			h1 { color: #FF2E93; text-shadow: 0 0 10px #FF2E93; margin-top: 20px; }
-			p { color: #888888; font-size: 14px; }
-			
-			.lang-bar { margin-bottom: 20px; }
-			.lang-btn { background: #1F2833; border: 1px solid #FF2E93; color: white; padding: 6px 12px; cursor: pointer; border-radius: 4px; font-weight: bold; margin: 0 3px; }
-			.lang-btn.active { background: #FF2E93; }
+    <h1>EIYURU VOICE PRO</h1>
+    
+    <div class="panel">
+        <label>🎙️ Voicebank (.wav):</label> <input type="file" accept="audio/wav" onchange="loadVB(event)" /><br>
+        <label>🎵 UTAU Track (.ust):</label> <input type="file" accept=".ust" onchange="loadUST(event)" />
+    </div>
 
-			#grid { display: grid; grid-template-columns: repeat(8, 40px); gap: 3px; justify-content: center; margin: 25px auto; width: fit-content; }
-			.cell { width: 40px; height: 40px; background: #1F2833; border-radius: 4px; cursor: pointer; transition: background 0.1s; }
-			.cell.active { background: #FF2E93; box-shadow: 0 0 10px #FF2E93; }
-			
-			.btn-synth { background: linear-gradient(45deg, #FF2E93, #D41D75); color: #fff; border: none; padding: 12px 24px; font-weight: bold; font-size: 15px; cursor: pointer; border-radius: 8px; box-shadow: 0 4px 15px rgba(255, 46, 147, 0.4); }
-			.btn-synth:hover { transform: scale(1.02); }
-		</style>
-	</head>
-	<body>
+    <div id="grid"></div>
+    <button class="btn" onclick="play()">Synthesize</button>
+    <div id="log">[SYSTEM]: Ready. Load Voicebank or UST.</div>
 
-		<!-- Dil Seçim Çubuğu -->
-		<div class="lang-bar">
-			<button class="lang-btn active" onclick="setLang('tr', this)">TR</button>
-			<button class="lang-btn" onclick="setLang('en', this)">EN</button>
-			<button class="lang-btn" onclick="setLang('ja', this)">JA</button>
-		</div>
+<script>
+    const notes = ["C5", "B4", "A4", "G4", "F4", "E4", "D4", "C4"];
+    const freqs = [523.25, 493.88, 440.00, 392.00, 349.23, 329.63, 293.66, 261.63];
+    const grid = document.getElementById('grid');
+    const log = document.getElementById('log');
+    let vbBuffer = null, audioCtx = null, matrix = Array(8).fill().map(() => Array(8).fill(null));
 
-		<h1>EIYURU VOICE</h1>
-		<p id="sub-title">Kendi sanal şarkıcını oluştur!</p>
+    function createGrid() {
+        grid.innerHTML = '';
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.innerHTML = `<span>${notes[r]}</span><b id="l-${r}-${c}"></b>`;
+                cell.onclick = () => {
+                    if (matrix[r][c]) {
+                        matrix[r][c] = null; cell.classList.remove('active'); document.getElementById(`l-${r}-${c}`).innerText = '';
+                    } else {
+                        const lyr = prompt("Lyric:", "a") || "a";
+                        matrix[r][c] = { lyric: lyr, freq: freqs[r] }; cell.classList.add('active'); document.getElementById(`l-${r}-${c}`).innerText = lyr;
+                    }
+                };
+                grid.appendChild(cell);
+            }
+        }
+    }
 
-		<!-- Nota Çizim Alanı -->
-		<div id="grid"></div>
+    function loadVB(e) {
+        if (!e.target.files[0]) return;
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            audioCtx.decodeAudioData(evt.target.result, b => { vbBuffer = b; log.innerText = "[VOICEBANK]: Loaded!"; });
+        };
+        reader.readAsArrayBuffer(e.target.files[0]);
+    }
 
-		<!-- Sesi Başlatma Butonu -->
-		<button class="btn-synth" id="btn-synth" onclick="playMusic()">Sesi Sentezle</button>
+    function loadUST(e) {
+        if (!e.target.files[0]) return;
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            matrix = Array(8).fill().map(() => Array(8).fill(null)); createGrid();
+            let col = 0;
+            evt.target.result.split(/\[#\d+\]/).forEach(sec => {
+                if (!sec.includes("NoteNum") || col >= 8) return;
+                const noteNum = parseInt(sec.match(/NoteNum=(\d+)/)?.[1] || 60);
+                const lyr = sec.match(/Lyric=([^\r\n]+)/)?.[1] || "a";
+                const f = 440 * Math.pow(2, (noteNum - 69) / 12);
+                let row = freqs.reduce((best, cur, idx) => Math.abs(cur - f) < Math.abs(freqs[best] - f) ? idx : best, 0);
+                matrix[row][col] = { lyric: lyr, freq: f };
+                const cView = grid.children[(row * 8) + col];
+                if (cView) { cView.classList.add('active'); document.getElementById(`l-${row}-${col}`).innerText = lyr; }
+                col++;
+            });
+            log.innerText = `[UST]: Loaded ${col} notes.`;
+        };
+        reader.readAsText(e.target.files[0], "ISO-8859-1");
+    }
 
-	<script>
-		// Ses ve Dil Motoru Kodları
-		const freqs = [523.25, 493.88, 440.00, 392.00, 349.23, 329.63, 293.66, 261.63]; 
-		const grid = document.getElementById('grid');
-		
-		const languages = {
-			tr: { sub: "Kendi sanal şarkıcını oluştur!", synth: "Sesi Sentezle" },
-			en: { sub: "Create your virtual singer!", synth: "Synthesize Audio" },
-			ja: { sub: "仮想シンガーを作ろう！", synth: "音声合成" }
-		};
+    function play() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let hasNotes = false;
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                if (!matrix[r][c]) continue;
+                hasNotes = true;
+                const start = audioCtx.currentTime + (c * 0.35);
+                const gain = audioCtx.createGain();
+                gain.gain.setValueAtTime(0, start);
+                gain.gain.linearRampToValueAtTime(vbBuffer ? 0.5 : 0.2, start + 0.03);
+                gain.gain.linearRampToValueAtTime(0, start + 0.35);
 
-		// 8x8 Izgarayı oluşturma
-		for (let r = 0; r < 8; r++) {
-			for (let c = 0; c < 8; c++) {
-				const cell = document.createElement('div');
-				cell.className = 'cell';
-				cell.dataset.freq = freqs[r];
-				cell.dataset.step = c;
-				cell.onclick = () => cell.classList.toggle('active');
-				grid.appendChild(cell);
-			}
-		}
-
-		function setLang(lang, element) {
-			document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-			element.classList.add('active');
-			document.getElementById('sub-title').innerText = languages[lang].sub;
-			document.getElementById('btn-synth').innerText = languages[lang].synth;
-		}
-
-		function playMusic() {
-			const ctx = new (window.AudioContext || window.webkitAudioContext)();
-			document.querySelectorAll('.cell.active').forEach(cell => {
-				const osc = ctx.createOscillator();
-				const gain = ctx.createGain();
-				const time = ctx.currentTime + (cell.dataset.step * 0.3);
-				
-				osc.frequency.value = parseFloat(cell.dataset.freq);
-				osc.type = 'triangle';
-				
-				gain.gain.setValueAtTime(0, time);
-				gain.gain.linearRampToValueAtTime(0.2, time + 0.02);
-				gain.gain.linearRampToValueAtTime(0, time + 0.28);
-				
-				osc.connect(gain).connect(ctx.destination);
-				osc.start(time);
-				osc.stop(time + 0.3);
-			});
-		}
-	</script>
-	</body>
+                if (vbBuffer) {
+                    const src = audioCtx.createBufferSource();
+                    src.buffer = vbBuffer;
+                    src.playbackRate.value = matrix[r][c].freq / 440.0;
+                    src.connect(gain).connect(audioCtx.destination);
+                    src.start(start); src.stop(start + 0.35);
+                } else {
+                    const osc = audioCtx.createOscillator();
+                    osc.type = 'triangle'; osc.frequency.value = matrix[r][c].freq;
+                    osc.connect(gain).connect(audioCtx.destination);
+                    osc.start(start); osc.stop(start + 0.35);
+                }
+            }
+        }
+        log.innerText = hasNotes ? "✨ Playing..." : "[WARNING]: Grid is empty!";
+    }
+    createGrid();
+</script>
+</body>
 </html>
