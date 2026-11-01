@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>EiyuruVoice</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="brand">
+  <h1>EiyuruVoice</h1>
+  <input id="pname" class="pname" value="Adsız proje" maxlength="60" aria-label="Proje adı">
+</div>
+<header class="top">
+  <button id="menuBtn" class="ic" aria-label="Menü">☰</button>
+  <div class="play"><button id="playBtn" class="pbtn" aria-label="Oynat">▶</button><span id="time">0:00.0</span></div>
+  <div class="right">
+    <button id="undoBtn" class="ic" aria-label="Geri al">↶</button>
+    <button id="redoBtn" class="ic" aria-label="Yinele">↷</button>
+    <button id="bpmBtn" class="chip">♩120</button>
+  </div>
+</header>
+
+<div id="menu" hidden>
+  <label id="langRow"><span>Dil</span><select id="lang"><option value="tr">Türkçe</option><option value="en">English</option><option value="ja">日本語</option><option value="ar">العربية</option></select></label>
+  <button id="saveBtn">Projeyi kaydet</button>
+  <button id="openBtn">Projeyi aç</button>
+  <button id="ustBtn">UST / USTX içe aktar</button>
+  <button id="ustOut">UST dışa aktar (seçili track)</button>
+  <button id="ustxOut">USTX dışa aktar</button>
+  <button id="wavOut">WAV dışa aktar</button>
+  <button id="vibBtn">Seçili notaya vibrato</button>
+  <button id="phRom">Söz: Japonca → Romaji</button>
+  <button id="phHira">Söz: Romaji → Hiragana</button>
+  <button id="phKata">Söz: Romaji → Katakana</button>
+  <button id="vbBtn">Ses bankası yükle (zip)</button>
+  <p id="vbName">Ses bankası yok: yerleşik sentezleyici</p>
+  <button id="baseBtn">Banka kayıt perdesi</button>
+  <button id="importBtn">Import Instrumental Music</button>
+  <button id="removeInst">Enstrümantalı kaldır</button>
+  <p id="instName">Enstrümantal yüklenmedi</p>
+  <button id="resetPb">Seçili notanın pitch'ini sıfırla</button>
+  <button id="clearBtn">Bu trackin notalarını sil</button>
+  <input type="file" id="instInput" accept="audio/*" hidden>
+  <input type="file" id="fileIn" hidden>
+</div>
+
+<nav class="trackbar">
+  <div id="trkList"></div>
+  <button id="addTrk" class="ic" aria-label="Track ekle">+</button>
+  <button id="muteTrk" class="ic" aria-label="Sustur">M</button>
+  <button id="delTrk" class="ic" aria-label="Track sil">✕</button>
+</nav>
+
+<main id="roll"><canvas id="cv"></canvas></main>
+
+<footer class="tools">
+  <div class="group">
+    <button class="tool on" data-tool="select" aria-label="Seç">↖</button>
+    <button class="tool" data-tool="pencil" aria-label="Nota ekle">✎</button>
+    <button class="tool" data-tool="pitch" aria-label="Pitch çiz">∿</button>
+    <button class="tool" data-tool="erase" aria-label="Nota sil">⌫</button>
+  </div>
+  <div class="group">
+    <button id="snapBtn" class="chip">1/8</button>
+    <button id="magnet" class="tool on" aria-label="Izgaraya yapış">⊓</button>
+  </div>
+  <div class="group">
+    <button id="zoomOut" class="ic">−</button>
+    <button id="zoomIn" class="ic">+</button>
+  </div>
+</footer>
+<div id="toast" hidden></div>
+<script src="voicebank.js"></script>
+<script src="phonemizer.js"></script>
+<script src="i18n.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
