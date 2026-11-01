@@ -8,8 +8,23 @@
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		<meta name="mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="off">
 		<div style="display: contents">%sveltekit.body%</div>
+
+		<!-- Eklenen kısım -->
+		<input
+			type="file"
+			id="import-instrumental-input"
+			accept="audio/*"
+			style="display: none"
+		/>
+		<button
+			type="button"
+			onclick="document.getElementById('import-instrumental-input').click()"
+		>
+			Import Instrumental Music
+		</button>
 	</body>
 </html>
